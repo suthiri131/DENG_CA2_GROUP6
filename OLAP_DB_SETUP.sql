@@ -135,6 +135,34 @@ SELECT
 FROM BikeSalesTeam6..customers;
 
 
+-- Populate ProductDIM table
+INSERT INTO BikeSalesDWTeam6..ProductDIM (Product_ID, Product_Name, Brand_Name, Category_Name, Model_Year, List_Price, Stocks)
+SELECT
+    p.product_id,
+    p.product_name,
+    b.brand_name,
+    c.category_name,
+    p.model_year,
+    p.list_price,
+    ISNULL(s.TotalStocks, 0) AS Stocks
+FROM
+    BikeSalesTeam6..products p
+JOIN
+    BikeSalesTeam6..brands b ON p.brand_id = b.brand_id
+JOIN
+    BikeSalesTeam6..categories c ON p.category_id = c.category_id
+LEFT JOIN (
+    -- Subquery to calculate total stocks for each product
+    SELECT
+        product_id,
+        SUM(quantity) AS TotalStocks
+    FROM
+        BikeSalesTeam6..stocks
+    GROUP BY
+        product_id
+) s ON p.product_id = s.product_id;
+
+
 
 
 
