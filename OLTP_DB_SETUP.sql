@@ -140,7 +140,7 @@ INSERT INTO stores (store_id, store_name, phone, email, street, city, state, zip
 
 INSERT INTO staffs (staff_id, first_name, last_name, email, phone, active, store_id, manager_id) VALUES 
 ('3031', 'Fabiola', 'Jackson', 'fabiola.jackson@bikes.shop', '(831) 555-5554', 1, 'ST1', NULL),
-('3030', 'Bernardine', 'Houston', 'bernardine.houston@bikes.shop', '(972) 530-5557', 1, 'ST3', '3037'),
+('30310', 'Bernardine', 'Houston', 'bernardine.houston@bikes.shop', '(972) 530-5557', 1, 'ST3', '3037'),
 ('3032', 'Mireya', 'Copeland', 'mireya.copeland@bikes.shop', '(831) 555-5555', 1, 'ST1', '3031'),
 ('3033', 'Genna', 'Serrano', 'genna.serrano@bikes.shop', '(831) 555-5556', 1, 'ST1', '3032'),
 ('3034', 'Virgie', 'Wiggins', 'virgie.wiggins@bikes.shop', '(831) 555-5557', 1, 'ST1', '3032'),
@@ -193,7 +193,6 @@ SELECT
     staff_id
 FROM staging_orders;
 
-
 DROP TABLE staging_orders;
 
 BULK INSERT order_items
@@ -205,20 +204,6 @@ BULK INSERT stocks
 --replace with own path
 FROM 'D:\Year2\Sem2\DENG\Assignment\CA2\Stocks.csv'
 WITH (fieldterminator=',', rowterminator='\n')
-
-Select @Product =
- BulkColumn
- from OPENROWSET(BULK 'D:\Year2\Sem2\DENG\Assignment\CA2\products.json', SINGLE_BLOB) JSON
-Insert into products
-Select * From OpenJSON(@Product, '$')
-with (
-    product_id varchar(10) '$.product_id',
-    product_name varchar(255) '$.product_name',
-    brand_id varchar(5) '$.brand_id',
-    category_id varchar(5) '$.category_id',
-    model_year int '$.model_year',
-    list_price decimal(10,2) '$.list_price'
-)
 
 Declare @Product varchar(max)
 Select @Product = 
@@ -233,3 +218,4 @@ with (
     category_id varchar(5) '$.category_id',
     model_year int '$.model_year',
     list_price decimal(10,2) '$.list_price')
+
