@@ -26,8 +26,47 @@ CREATE TABLE TimeDIM (
     Day_of_month INT NOT NULL,
     Day_of_week INT NOT NULL,
     Is_Weekend BIT NOT NULL,
-    Is_Holiday BIT NULL 
+    Is_Holiday BIT NOT NULL 
 );
+
+-- Create staging table for holidays
+CREATE TABLE staging_holiday (
+    raw_date VARCHAR(20),
+    holiday VARCHAR(255),
+    weekday VARCHAR(255),
+    month VARCHAR(20),
+    day VARCHAR(20),
+    year VARCHAR(20)
+);
+
+-- Bulk insert into staging_holidays from a CSV file
+BULK INSERT staging_holiday
+FROM 'C:\Users\chuaj\Downloads\Us Holiday Dates (2004-2021).csv'
+WITH (
+    FIELDTERMINATOR = ',',
+    ROWTERMINATOR = '\n');
+
+-- Assuming you have a final table structured like this:
+CREATE TABLE holidays (
+    date DATE,
+    holiday VARCHAR(255),
+    weekday VARCHAR(255),
+    month VARCHAR(20),
+    day VARCHAR(20),
+    year VARCHAR(20)
+);
+
+-- Insert into the final holidays table with date conversion
+INSERT INTO holidays (date, holiday, weekday, month, day, year)
+SELECT
+    -- Convert DD/MM/YYYY to YYYY-MM-DD
+   TRY_CAST(raw_date AS DATE),
+    holiday,
+    weekday,
+    month,
+    day,
+    year
+FROM staging_holiday;
 
 CREATE TABLE StaffDIM (
     Staff_Key INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
@@ -37,7 +76,7 @@ CREATE TABLE StaffDIM (
     Email VARCHAR(255) NOT NULL UNIQUE,
     Phone VARCHAR(50),
     Active INT NOT NULL,
-    Manager_ID varchar(5) -- Assuming this is a reference to another Staff_Key
+    Manager_ID varchar(5) 
 );
 
 CREATE TABLE ProductDIM (
@@ -103,11 +142,10 @@ SELECT
     DATEPART(WEEK, DateValue) AS Week,
     DateValue AS Date,
     DAY(DateValue) AS Day_of_month,
-    -- Adjust the +1 if the week starts on a different day
     (DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 1) % 7 + 1 AS Day_of_week,
-    -- Check for Saturday (7) or Sunday (1)
     CASE WHEN (DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 1) % 7 + 1 IN (1, 7) THEN 1 ELSE 0 END AS Is_Weekend,
-    NULL AS Is_Holiday -- Default to NULL
+    -- Subquery to determine if the date is a holiday
+    CASE WHEN EXISTS (SELECT 1 FROM holidays h WHERE h.date = DateValue) THEN 1 ELSE 0 END AS Is_Holiday
 FROM 
     DateCTE
 OPTION (MAXRECURSION 0); -- Allows for unlimited recursion
@@ -162,12 +200,6 @@ LEFT JOIN (
         product_id
 ) s ON p.product_id = s.product_id;
 
-
-
-
-
-
-
-
-
+DROP TABLE staging_holiday;
+DROP TABLE holidays;
 
