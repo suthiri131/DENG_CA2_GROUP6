@@ -200,6 +200,28 @@ LEFT JOIN (
         product_id
 ) s ON p.product_id = s.product_id;
 
+-- Populate the SalesFacts table
+INSERT INTO SalesFacts (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key, Order_Status, Quantity_Sold, Discount, Total_Sales)
+SELECT
+    TD.Time_Key,
+    CD.Customer_Key,
+    SD.Staff_Key,
+    PD.Product_Key,
+    STD.Store_Key,
+    O.order_status,
+    OI.quantity AS Quantity_Sold,
+    OI.discount AS Discount,
+    (OI.quantity * OI.list_price - OI.discount) AS Total_Sales
+FROM
+    BikeSalesTeam6..orders O
+INNER JOIN BikeSalesTeam6..order_items OI ON O.order_id = OI.order_id
+INNER JOIN BikeSalesDWTeam6..CustomerDIM CD ON O.customer_id = CD.Customer_ID
+INNER JOIN BikeSalesDWTeam6..StaffDIM SD ON O.staff_id = SD.Staff_ID
+INNER JOIN BikeSalesDWTeam6..ProductDIM PD ON OI.product_id = PD.Product_ID
+INNER JOIN BikeSalesDWTeam6..StoreDIM STD ON O.store_id = STD.Store_ID
+INNER JOIN BikeSalesDWTeam6..TimeDIM TD ON TD.Date = O.order_date
+
+
 DROP TABLE staging_holiday;
 DROP TABLE holidays;
 
