@@ -113,6 +113,7 @@ CREATE TABLE SalesFacts (
     Quantity_Sold INT NULL,
     Discount DECIMAL(10,2) NULL,
     Total_Sales DECIMAL(10,2) NULL,
+	CONSTRAINT SalesKey PRIMARY KEY (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key),
     FOREIGN KEY (Time_Key) REFERENCES TimeDIM(Time_Key),
     FOREIGN KEY (Customer_Key) REFERENCES CustomerDIM(Customer_Key),
     FOREIGN KEY (Staff_Key) REFERENCES StaffDIM(Staff_Key),
@@ -123,6 +124,7 @@ CREATE TABLE SalesFacts (
 
 USE BikeSalesDWTeam6; 
 -- Declare start and end dates
+SET DATEFIRST 7;
 DECLARE @StartDate DATE = '2016-01-01';
 DECLARE @EndDate DATE = '2018-12-31';
 
@@ -142,8 +144,8 @@ SELECT
     DATEPART(WEEK, DateValue) AS Week,
     DateValue AS Date,
     DAY(DateValue) AS Day_of_month,
-    (DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 1) % 7 + 1 AS Day_of_week,
-    CASE WHEN (DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 1) % 7 + 1 IN (1, 7) THEN 1 ELSE 0 END AS Is_Weekend,
+    (DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 2) % 7 + 1 AS Day_of_week,
+    CASE WHEN DATEPART(WEEKDAY, DateValue) IN (7, 1) THEN 1 ELSE 0 END AS Is_Weekend,
     -- Subquery to determine if the date is a holiday
     CASE WHEN EXISTS (SELECT 1 FROM holidays h WHERE h.date = DateValue) THEN 1 ELSE 0 END AS Is_Holiday
 FROM 
@@ -211,7 +213,7 @@ SELECT
     O.order_status,
     OI.quantity AS Quantity_Sold,
     OI.discount AS Discount,
-    (OI.quantity * OI.list_price - OI.discount) AS Total_Sales
+    CAST(SUM(oi.quantity * oi.list_price * (1 - oi.discount)) AS DECIMAL(18, 2)) AS Total_Sales
 FROM
     BikeSalesTeam6..orders O
 INNER JOIN BikeSalesTeam6..order_items OI ON O.order_id = OI.order_id
@@ -220,7 +222,15 @@ INNER JOIN BikeSalesDWTeam6..StaffDIM SD ON O.staff_id = SD.Staff_ID
 INNER JOIN BikeSalesDWTeam6..ProductDIM PD ON OI.product_id = PD.Product_ID
 INNER JOIN BikeSalesDWTeam6..StoreDIM STD ON O.store_id = STD.Store_ID
 INNER JOIN BikeSalesDWTeam6..TimeDIM TD ON TD.Date = O.order_date
-
+GROUP BY
+    TD.Time_Key,
+    CD.Customer_Key,
+    SD.Staff_Key,
+    PD.Product_Key,
+    STD.Store_Key,
+    O.order_status,
+    OI.quantity,
+    OI.discount
 
 DROP TABLE staging_holiday;
 DROP TABLE holidays;
