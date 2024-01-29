@@ -41,7 +41,7 @@ CREATE TABLE staging_holiday (
 
 -- Bulk insert into staging_holidays from a CSV file
 BULK INSERT staging_holiday
-FROM 'C:\Users\chuaj\Downloads\Us Holiday Dates (2004-2021).csv'
+FROM 'C:\AY202324\AY2023S2\DENG\Assignment2\Us Holiday Dates (2004-2021).csv'
 WITH (
     FIELDTERMINATOR = ',',
     ROWTERMINATOR = '\n');
@@ -55,6 +55,7 @@ CREATE TABLE holidays (
     day VARCHAR(20),
     year VARCHAR(20)
 );
+
 
 -- Insert into the final holidays table with date conversion
 INSERT INTO holidays (date, holiday, weekday, month, day, year)
@@ -102,6 +103,14 @@ CREATE TABLE StoreDIM (
     Zip_Code VARCHAR(20)
 );
 
+Create table OrderDIM(
+Order_key  INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+Order_ID VARCHAR(10) UNIQUE,
+order_status VARCHAR(255) NULL,
+required_date DATE NOT NULL,
+shipped_date DATE
+)
+
 -- Create the fact table
 CREATE TABLE SalesFacts (
     Time_Key INT NOT NULL,
@@ -109,7 +118,7 @@ CREATE TABLE SalesFacts (
     Staff_Key INT NOT NULL,
     Product_Key INT NOT NULL,
     Store_Key INT NOT NULL,
-    Order_Status VARCHAR(255) NULL,
+	Order_Key INT NOT NULL,
     Quantity_Sold INT NULL,
     Discount DECIMAL(10,2) NULL,
     Total_Sales DECIMAL(10,2) NULL,
@@ -118,8 +127,12 @@ CREATE TABLE SalesFacts (
     FOREIGN KEY (Customer_Key) REFERENCES CustomerDIM(Customer_Key),
     FOREIGN KEY (Staff_Key) REFERENCES StaffDIM(Staff_Key),
     FOREIGN KEY (Product_Key) REFERENCES ProductDIM(Product_Key),
-    FOREIGN KEY (Store_Key) REFERENCES StoreDIM(Store_Key)
+    FOREIGN KEY (Store_Key) REFERENCES StoreDIM(Store_Key),
+    FOREIGN KEY (Order_Key) REFERENCES OrderDIM(Order_Key)
+
 );
+
+
 
 
 USE BikeSalesDWTeam6; 
@@ -202,15 +215,34 @@ LEFT JOIN (
         product_id
 ) s ON p.product_id = s.product_id;
 
+-- Populate the Order table
+INSERT INTO OrderDIM(Order_ID, order_status, required_date, shipped_date)
+SELECT
+ 
+    o.order_id,
+    CASE
+        WHEN o.order_status = 1 THEN 'Pending'
+        WHEN o.order_status = 2 THEN 'Processing'
+        WHEN o.order_status = 3 THEN 'Rejected'
+        WHEN o.order_status = 4 THEN 'Completed'
+       
+    END AS order_status,
+    o.required_date,
+    o.shipped_date
+FROM
+    BikeSalesTeam6..orders o;
+
+	Select * from OrderDIM
+
 -- Populate the SalesFacts table
-INSERT INTO SalesFacts (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key, Order_Status, Quantity_Sold, Discount, Total_Sales)
+INSERT INTO SalesFacts (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key,Order_Key, Quantity_Sold, Discount, Total_Sales)
 SELECT
     TD.Time_Key,
     CD.Customer_Key,
     SD.Staff_Key,
     PD.Product_Key,
     STD.Store_Key,
-    O.order_status,
+    OD.Order_key,
     OI.quantity AS Quantity_Sold,
     OI.discount AS Discount,
     CAST(SUM(oi.quantity * oi.list_price * (1 - oi.discount)) AS DECIMAL(18, 2)) AS Total_Sales
@@ -221,6 +253,7 @@ INNER JOIN BikeSalesDWTeam6..CustomerDIM CD ON O.customer_id = CD.Customer_ID
 INNER JOIN BikeSalesDWTeam6..StaffDIM SD ON O.staff_id = SD.Staff_ID
 INNER JOIN BikeSalesDWTeam6..ProductDIM PD ON OI.product_id = PD.Product_ID
 INNER JOIN BikeSalesDWTeam6..StoreDIM STD ON O.store_id = STD.Store_ID
+INNER JOIN BikeSalesDWTeam6..OrderDIM OD ON O.order_id = OD.Order_ID
 INNER JOIN BikeSalesDWTeam6..TimeDIM TD ON TD.Date = O.order_date
 GROUP BY
     TD.Time_Key,
@@ -228,10 +261,9 @@ GROUP BY
     SD.Staff_Key,
     PD.Product_Key,
     STD.Store_Key,
-    O.order_status,
+	OD.Order_key,
     OI.quantity,
     OI.discount
 
 DROP TABLE staging_holiday;
 DROP TABLE holidays;
-
