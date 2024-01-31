@@ -41,12 +41,12 @@ CREATE TABLE staging_holiday (
 
 -- Bulk insert into staging_holidays from a CSV file
 BULK INSERT staging_holiday
-FROM 'C:\AY202324\AY2023S2\DENG\Assignment2\Us Holiday Dates (2004-2021).csv'
+FROM 'C:\Users\chuaj\Downloads\US Holiday Dates (2004-2021).csv'
 WITH (
     FIELDTERMINATOR = ',',
     ROWTERMINATOR = '\n');
 
--- Assuming you have a final table structured like this:
+-- Create final holidays table
 CREATE TABLE holidays (
     date DATE,
     holiday VARCHAR(255),
@@ -131,8 +131,6 @@ CREATE TABLE SalesFacts (
     FOREIGN KEY (Order_Key) REFERENCES OrderDIM(Order_Key)
 
 );
-
-
 
 
 USE BikeSalesDWTeam6; 
@@ -231,8 +229,6 @@ SELECT
     o.shipped_date
 FROM
     BikeSalesTeam6..orders o;
-
-	Select * from OrderDIM
 
 -- Populate the SalesFacts table
 INSERT INTO SalesFacts (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key,Order_Key, Quantity_Sold, Discount, Total_Sales)
