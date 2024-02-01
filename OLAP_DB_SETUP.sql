@@ -41,7 +41,7 @@ CREATE TABLE staging_holiday (
 
 -- Bulk insert into staging_holidays from a CSV file
 BULK INSERT staging_holiday
-FROM 'C:\Users\chuaj\Downloads\US Holiday Dates (2004-2021).csv'
+FROM 'C:\AY202324\AY2023S2\DENG\Assignment2\US Holiday Dates (2004-2021).csv'
 WITH (
     FIELDTERMINATOR = ',',
     ROWTERMINATOR = '\n');
@@ -122,7 +122,7 @@ CREATE TABLE SalesFacts (
     Quantity_Sold INT NULL,
     Discount DECIMAL(10,2) NULL,
     Total_Sales DECIMAL(10,2) NULL,
-	CONSTRAINT SalesKey PRIMARY KEY (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key),
+	CONSTRAINT SalesKey PRIMARY KEY (Time_Key, Customer_Key, Staff_Key, Product_Key, Store_Key,Order_Key),
     FOREIGN KEY (Time_Key) REFERENCES TimeDIM(Time_Key),
     FOREIGN KEY (Customer_Key) REFERENCES CustomerDIM(Customer_Key),
     FOREIGN KEY (Staff_Key) REFERENCES StaffDIM(Staff_Key),
