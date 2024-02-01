@@ -259,7 +259,7 @@ GROUP BY
     STD.Store_Key,
 	OD.Order_key,
     OI.quantity,
-    OI.discount
+    OI.discount;
 
 DROP TABLE staging_holiday;
 DROP TABLE holidays;
